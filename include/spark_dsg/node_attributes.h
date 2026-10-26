@@ -478,4 +478,102 @@ struct TravNodeAttributes : public SemanticNodeAttributes {
   const serialization::RegistrationInfo& registrationImpl() const override;
 };
 
+/**
+ * @brief A storey of a building: a walkable support surface at one height.
+ */
+struct FloorNodeAttributes : public SemanticNodeAttributes {
+ public:
+  using Ptr = std::unique_ptr<FloorNodeAttributes>;
+
+  FloorNodeAttributes();
+  virtual ~FloorNodeAttributes() = default;
+  NodeAttributes::Ptr clone() const override;
+
+  //! Rank of the floor by height (0 = lowest).
+  int64_t index = 0;
+  //! Height of the walkable surface in the world frame.
+  double floor_z = 0.0;
+  //! Height of the ceiling (valid only if has_ceiling).
+  bool has_ceiling = false;
+  double ceiling_z = 0.0;
+  //! 2D convex hull of the supporting evidence (z = floor_z).
+  std::vector<Eigen::Vector3d> footprint;
+  //! Area of the footprint in square meters.
+  double area_m2 = 0.0;
+  //! Horizontal path length of the trajectory walked on this floor.
+  double trajectory_support_m = 0.0;
+  //! Number of places supported by this floor.
+  uint64_t place_support = 0;
+  //! Whether the floor is confirmed (vs. still tentative).
+  bool confirmed = false;
+  //! Time the floor was first observed.
+  uint64_t first_seen_ns = 0;
+
+ protected:
+  std::ostream& fill_ostream(std::ostream& out) const override;
+  void serialization_info() override;
+  bool is_equal(const NodeAttributes& other) const override;
+
+  const serialization::RegistrationInfo& registrationImpl() const override;
+};
+
+/**
+ * @brief A vertical connection (stairs, ramp, elevator) between two floors.
+ */
+struct ConnectorNodeAttributes : public SemanticNodeAttributes {
+ public:
+  using Ptr = std::unique_ptr<ConnectorNodeAttributes>;
+
+  enum class Type : uint8_t { UNKNOWN = 0, STAIRS = 1, RAMP = 2, ELEVATOR = 3 };
+
+  //! Bit flags for the evidence a connector was detected from.
+  enum Source : uint8_t { TRAJECTORY = 1, GEOMETRY = 2, SEMANTIC = 4 };
+
+  ConnectorNodeAttributes();
+  virtual ~ConnectorNodeAttributes() = default;
+  NodeAttributes::Ptr clone() const override;
+
+  static std::string typeToString(Type type);
+
+  //! Kind of connector.
+  Type connector_type = Type::UNKNOWN;
+  //! Floor at the bottom and top of the connector.
+  NodeId lower_floor = 0;
+  NodeId upper_floor = 0;
+  //! Points where the connector meets the lower and upper floor.
+  Eigen::Vector3d entry = Eigen::Vector3d::Zero();
+  Eigen::Vector3d exit = Eigen::Vector3d::Zero();
+  //! Height of the walkable surface at the bottom and top.
+  double z_bottom = 0.0;
+  double z_top = 0.0;
+  //! Vertical and horizontal extent of the walked path.
+  double rise = 0.0;
+  double run = 0.0;
+  //! Mean slope of the connector in degrees.
+  double slope_deg = 0.0;
+  //! Estimated step height for stairs (0 if unknown or not stairs).
+  double step_height = 0.0;
+  //! Estimated number of steps (0 if unknown or not stairs).
+  uint64_t num_steps = 0;
+  //! Approximate usable width.
+  double width = 0.0;
+  //! Heights of intermediate landings.
+  std::vector<double> landing_z;
+  //! 2D footprint of the connector (z = z_bottom).
+  std::vector<Eigen::Vector3d> footprint;
+  //! Confidence in the connector type in [0, 1].
+  double confidence = 0.0;
+  //! Whether the robot has traversed the connector.
+  bool traversed = false;
+  //! Evidence the connector was detected from (see Source).
+  uint8_t source_flags = 0;
+
+ protected:
+  std::ostream& fill_ostream(std::ostream& out) const override;
+  void serialization_info() override;
+  bool is_equal(const NodeAttributes& other) const override;
+
+  const serialization::RegistrationInfo& registrationImpl() const override;
+};
+
 }  // namespace spark_dsg

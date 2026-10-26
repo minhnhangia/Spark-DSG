@@ -84,4 +84,47 @@ inline EdgeAttributes getEdgeAttributes() {
   return expected;
 }
 
+inline FloorNodeAttributes getFloorNodeAttributes() {
+  FloorNodeAttributes expected;
+  expected.position << 1.0, 2.0, 3.0;
+  expected.name = "floor_attributes";
+  expected.semantic_label = 13;
+  expected.index = 2;
+  expected.floor_z = -3.3;
+  expected.has_ceiling = true;
+  expected.ceiling_z = 0.0;
+  expected.footprint = {{0.0, 0.0, -3.3}, {4.0, 0.0, -3.3}, {4.0, 5.0, -3.3}};
+  expected.area_m2 = 10.0;
+  expected.trajectory_support_m = 76.0;
+  expected.place_support = 112;
+  expected.confirmed = true;
+  expected.first_seen_ns = 123456789;
+  return expected;
+}
+
+inline ConnectorNodeAttributes getConnectorNodeAttributes() {
+  ConnectorNodeAttributes expected;
+  expected.position << 1.0, 2.0, 3.0;
+  expected.name = "connector_attributes";
+  expected.connector_type = ConnectorNodeAttributes::Type::STAIRS;
+  expected.lower_floor = 70;
+  expected.upper_floor = 71;
+  expected.entry << -20.0, 1.0, -3.3;
+  expected.exit << -16.0, 1.0, 0.0;
+  expected.z_bottom = -3.3;
+  expected.z_top = 0.0;
+  expected.rise = 3.3;
+  expected.run = 6.0;
+  expected.slope_deg = 28.8;
+  expected.step_height = 0.165;
+  expected.num_steps = 20;
+  expected.width = 1.2;
+  expected.landing_z = {-1.49};
+  expected.footprint = {{-23.0, -8.0, -3.3}, {-15.0, -8.0, -3.3}, {-15.0, 3.0, -3.3}};
+  expected.confidence = 0.8;
+  expected.traversed = true;
+  expected.source_flags = ConnectorNodeAttributes::TRAJECTORY | ConnectorNodeAttributes::SEMANTIC;
+  return expected;
+}
+
 }  // namespace spark_dsg

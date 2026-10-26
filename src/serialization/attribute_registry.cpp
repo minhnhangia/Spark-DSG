@@ -97,6 +97,8 @@ AttributeRegistry<NodeAttributes>::AttributeRegistry() {
   add("TraversabilityNodeAttributes",
       [] { return make_unique<TraversabilityNodeAttributes>(); });
   add("TravNodeAttributes", [] { return make_unique<TravNodeAttributes>(); });
+  add("FloorNodeAttributes", [] { return make_unique<FloorNodeAttributes>(); });
+  add("ConnectorNodeAttributes", [] { return make_unique<ConnectorNodeAttributes>(); });
 }
 
 template <>

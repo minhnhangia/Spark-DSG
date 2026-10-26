@@ -92,6 +92,10 @@ struct DsgLayers {
   inline constexpr static const char* TRAVERSABILITY = "TRAVERSABILITY";
   //! Room node layer
   inline constexpr static const char* ROOMS = "ROOMS";
+  //! Inter-floor connector (stairs, ramps) node layer
+  inline constexpr static const char* CONNECTORS = "CONNECTORS";
+  //! Floor (storey) node layer
+  inline constexpr static const char* FLOORS = "FLOORS";
   //! Building node layer
   inline constexpr static const char* BUILDINGS = "BUILDINGS";
 

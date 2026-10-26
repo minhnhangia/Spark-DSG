@@ -216,6 +216,45 @@ void init_attributes(py::module_& m) {
       .def_readwrite("first_observed_ns", &TravNodeAttributes::first_observed_ns)
       .def_readwrite("last_observed_ns", &TravNodeAttributes::last_observed_ns);
 
+  py::class_<FloorNodeAttributes, SemanticNodeAttributes>(m, "FloorNodeAttributes")
+      .def(py::init<>())
+      .def_readwrite("index", &FloorNodeAttributes::index)
+      .def_readwrite("floor_z", &FloorNodeAttributes::floor_z)
+      .def_readwrite("has_ceiling", &FloorNodeAttributes::has_ceiling)
+      .def_readwrite("ceiling_z", &FloorNodeAttributes::ceiling_z)
+      .def_readwrite("footprint", &FloorNodeAttributes::footprint)
+      .def_readwrite("area_m2", &FloorNodeAttributes::area_m2)
+      .def_readwrite("trajectory_support_m", &FloorNodeAttributes::trajectory_support_m)
+      .def_readwrite("place_support", &FloorNodeAttributes::place_support)
+      .def_readwrite("confirmed", &FloorNodeAttributes::confirmed)
+      .def_readwrite("first_seen_ns", &FloorNodeAttributes::first_seen_ns);
+
+  py::class_<ConnectorNodeAttributes, SemanticNodeAttributes> connector(m, "ConnectorNodeAttributes");
+  py::enum_<ConnectorNodeAttributes::Type>(connector, "Type")
+      .value("UNKNOWN", ConnectorNodeAttributes::Type::UNKNOWN)
+      .value("STAIRS", ConnectorNodeAttributes::Type::STAIRS)
+      .value("RAMP", ConnectorNodeAttributes::Type::RAMP)
+      .value("ELEVATOR", ConnectorNodeAttributes::Type::ELEVATOR);
+  connector.def(py::init<>())
+      .def_readwrite("connector_type", &ConnectorNodeAttributes::connector_type)
+      .def_readwrite("lower_floor", &ConnectorNodeAttributes::lower_floor)
+      .def_readwrite("upper_floor", &ConnectorNodeAttributes::upper_floor)
+      .def_readwrite("entry", &ConnectorNodeAttributes::entry)
+      .def_readwrite("exit", &ConnectorNodeAttributes::exit)
+      .def_readwrite("z_bottom", &ConnectorNodeAttributes::z_bottom)
+      .def_readwrite("z_top", &ConnectorNodeAttributes::z_top)
+      .def_readwrite("rise", &ConnectorNodeAttributes::rise)
+      .def_readwrite("run", &ConnectorNodeAttributes::run)
+      .def_readwrite("slope_deg", &ConnectorNodeAttributes::slope_deg)
+      .def_readwrite("step_height", &ConnectorNodeAttributes::step_height)
+      .def_readwrite("num_steps", &ConnectorNodeAttributes::num_steps)
+      .def_readwrite("width", &ConnectorNodeAttributes::width)
+      .def_readwrite("landing_z", &ConnectorNodeAttributes::landing_z)
+      .def_readwrite("footprint", &ConnectorNodeAttributes::footprint)
+      .def_readwrite("confidence", &ConnectorNodeAttributes::confidence)
+      .def_readwrite("traversed", &ConnectorNodeAttributes::traversed)
+      .def_readwrite("source_flags", &ConnectorNodeAttributes::source_flags);
+
   py::class_<AgentNodeAttributes, NodeAttributes>(m, "AgentNodeAttributes")
       .def(py::init<>())
       .def_property(

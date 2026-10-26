@@ -179,7 +179,7 @@ TEST(MemoryUsage, SceneGraphLayer) {
 
 TEST(MemoryUsage, SceneGraph) {
   SceneGraph graph;
-  size_t expected_size = 2385;
+  size_t expected_size = 2847;  // default graph has five layers (incl. FLOORS)
   EXPECT_EQ(graph.memoryUsage(), expected_size);
 
   // Add a layer.

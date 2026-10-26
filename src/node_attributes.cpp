@@ -34,8 +34,11 @@
  * -------------------------------------------------------------------------- */
 #include "spark_dsg/node_attributes.h"
 
+#include <cmath>
+#include <limits>
 #include <numbers>
 
+#include "spark_dsg/node_symbol.h"
 #include "spark_dsg/serialization/attribute_registry.h"
 #include "spark_dsg/serialization/attribute_serialization.h"
 #include "spark_dsg/serialization/binary_conversions.h"
@@ -105,6 +108,16 @@ const RegistrationInfo& TraversabilityNodeAttributes::registrationImpl() const {
 
 const RegistrationInfo& TravNodeAttributes::registrationImpl() const {
   static const auto info = NodeRegistry::registration("TravNodeAttributes");
+  return info;
+}
+
+const RegistrationInfo& FloorNodeAttributes::registrationImpl() const {
+  static const auto info = NodeRegistry::registration("FloorNodeAttributes");
+  return info;
+}
+
+const RegistrationInfo& ConnectorNodeAttributes::registrationImpl() const {
+  static const auto info = NodeRegistry::registration("ConnectorNodeAttributes");
   return info;
 }
 
@@ -779,6 +792,145 @@ double TravNodeAttributes::area() const {
     area += 0.5 * r1 * r2 * angle_increment;
   }
   return area;
+}
+
+FloorNodeAttributes::FloorNodeAttributes() : SemanticNodeAttributes() {}
+
+NodeAttributes::Ptr FloorNodeAttributes::clone() const {
+  return std::make_unique<FloorNodeAttributes>(*this);
+}
+
+std::ostream& FloorNodeAttributes::fill_ostream(std::ostream& out) const {
+  SemanticNodeAttributes::fill_ostream(out);
+  out << "  - index: " << index << "\n"
+      << "  - floor_z: " << floor_z << "\n"
+      << "  - ceiling_z: " << (has_ceiling ? std::to_string(ceiling_z) : "unknown") << "\n"
+      << "  - footprint: " << footprint.size() << " point(s)\n"
+      << "  - area_m2: " << area_m2 << "\n"
+      << "  - trajectory_support_m: " << trajectory_support_m << "\n"
+      << "  - place_support: " << place_support << "\n"
+      << "  - confirmed: " << std::boolalpha << confirmed << "\n"
+      << "  - first_seen_ns: " << first_seen_ns << "\n";
+  return out;
+}
+
+void FloorNodeAttributes::serialization_info() {
+  SemanticNodeAttributes::serialization_info();
+  serialization::field("index", index);
+  serialization::field("floor_z", floor_z);
+  serialization::field("has_ceiling", has_ceiling);
+  serialization::field("ceiling_z", ceiling_z);
+  serialization::field("footprint", footprint);
+  serialization::field("area_m2", area_m2);
+  serialization::field("trajectory_support_m", trajectory_support_m);
+  serialization::field("place_support", place_support);
+  serialization::field("confirmed", confirmed);
+  serialization::field("first_seen_ns", first_seen_ns);
+}
+
+bool FloorNodeAttributes::is_equal(const NodeAttributes& other) const {
+  const auto derived = dynamic_cast<const FloorNodeAttributes*>(&other);
+  if (!derived) {
+    return false;
+  }
+
+  if (!SemanticNodeAttributes::is_equal(other)) {
+    return false;
+  }
+
+  return index == derived->index && floor_z == derived->floor_z &&
+         has_ceiling == derived->has_ceiling &&
+         (!has_ceiling || ceiling_z == derived->ceiling_z) &&
+         footprint == derived->footprint && area_m2 == derived->area_m2 &&
+         trajectory_support_m == derived->trajectory_support_m &&
+         place_support == derived->place_support && confirmed == derived->confirmed &&
+         first_seen_ns == derived->first_seen_ns;
+}
+
+ConnectorNodeAttributes::ConnectorNodeAttributes() : SemanticNodeAttributes() {}
+
+NodeAttributes::Ptr ConnectorNodeAttributes::clone() const {
+  return std::make_unique<ConnectorNodeAttributes>(*this);
+}
+
+std::string ConnectorNodeAttributes::typeToString(Type type) {
+  switch (type) {
+    case Type::STAIRS:
+      return "STAIRS";
+    case Type::RAMP:
+      return "RAMP";
+    case Type::ELEVATOR:
+      return "ELEVATOR";
+    case Type::UNKNOWN:
+    default:
+      return "UNKNOWN";
+  }
+}
+
+std::ostream& ConnectorNodeAttributes::fill_ostream(std::ostream& out) const {
+  SemanticNodeAttributes::fill_ostream(out);
+  out << "  - connector_type: " << typeToString(connector_type) << "\n"
+      << "  - lower_floor: " << NodeSymbol(lower_floor).str() << "\n"
+      << "  - upper_floor: " << NodeSymbol(upper_floor).str() << "\n"
+      << "  - entry: " << entry.transpose() << "\n"
+      << "  - exit: " << exit.transpose() << "\n"
+      << "  - z_bottom: " << z_bottom << ", z_top: " << z_top << "\n"
+      << "  - rise: " << rise << ", run: " << run << ", slope_deg: " << slope_deg
+      << "\n"
+      << "  - step_height: " << step_height << ", num_steps: " << num_steps << "\n"
+      << "  - width: " << width << "\n"
+      << "  - landings: " << landing_z.size() << "\n"
+      << "  - confidence: " << confidence << "\n"
+      << "  - traversed: " << std::boolalpha << traversed << "\n"
+      << "  - source_flags: " << static_cast<int>(source_flags) << "\n";
+  return out;
+}
+
+void ConnectorNodeAttributes::serialization_info() {
+  SemanticNodeAttributes::serialization_info();
+  // Workaround for enum serialization.
+  auto type = static_cast<uint8_t>(connector_type);
+  serialization::field("connector_type", type);
+  connector_type = static_cast<Type>(type);
+  serialization::field("lower_floor", lower_floor);
+  serialization::field("upper_floor", upper_floor);
+  serialization::field("entry", entry);
+  serialization::field("exit", exit);
+  serialization::field("z_bottom", z_bottom);
+  serialization::field("z_top", z_top);
+  serialization::field("rise", rise);
+  serialization::field("run", run);
+  serialization::field("slope_deg", slope_deg);
+  serialization::field("step_height", step_height);
+  serialization::field("num_steps", num_steps);
+  serialization::field("width", width);
+  serialization::field("landing_z", landing_z);
+  serialization::field("footprint", footprint);
+  serialization::field("confidence", confidence);
+  serialization::field("traversed", traversed);
+  serialization::field("source_flags", source_flags);
+}
+
+bool ConnectorNodeAttributes::is_equal(const NodeAttributes& other) const {
+  const auto derived = dynamic_cast<const ConnectorNodeAttributes*>(&other);
+  if (!derived) {
+    return false;
+  }
+
+  if (!SemanticNodeAttributes::is_equal(other)) {
+    return false;
+  }
+
+  return connector_type == derived->connector_type &&
+         lower_floor == derived->lower_floor && upper_floor == derived->upper_floor &&
+         entry == derived->entry && exit == derived->exit &&
+         z_bottom == derived->z_bottom && z_top == derived->z_top &&
+         rise == derived->rise && run == derived->run &&
+         slope_deg == derived->slope_deg && step_height == derived->step_height &&
+         num_steps == derived->num_steps && width == derived->width &&
+         landing_z == derived->landing_z && footprint == derived->footprint &&
+         confidence == derived->confidence && traversed == derived->traversed &&
+         source_flags == derived->source_flags;
 }
 
 }  // namespace spark_dsg

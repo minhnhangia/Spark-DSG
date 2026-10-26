@@ -113,8 +113,12 @@ std::optional<LayerKey> DsgLayers::nameToLayerId(const std::string& name) {
     return LayerKey{3, 2};
   } else if (name == DsgLayers::ROOMS) {
     return 4;
-  } else if (name == DsgLayers::BUILDINGS) {
+  } else if (name == DsgLayers::CONNECTORS) {
+    return LayerKey{4, 1};
+  } else if (name == DsgLayers::FLOORS) {
     return 5;
+  } else if (name == DsgLayers::BUILDINGS) {
+    return 6;
   } else {
     return std::nullopt;
   }

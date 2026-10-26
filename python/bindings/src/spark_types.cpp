@@ -71,6 +71,8 @@ void init_spark_types(py::module_& m) {
       .def_readonly_static("MESH_PLACES", &DsgLayers::MESH_PLACES)
       .def_readonly_static("TRAVERSABILITY", &DsgLayers::TRAVERSABILITY)
       .def_readonly_static("ROOMS", &DsgLayers::ROOMS)
+      .def_readonly_static("CONNECTORS", &DsgLayers::CONNECTORS)
+      .def_readonly_static("FLOORS", &DsgLayers::FLOORS)
       .def_readonly_static("BUILDINGS", &DsgLayers::BUILDINGS)
       .def_static(
           "name_to_layer_id",

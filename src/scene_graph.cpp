@@ -66,13 +66,14 @@ std::set<LayerKey> layersFromNames(const LayerNames& layer_names,
 bool EdgeLayerInfo::isSameLayer() const { return source == target; }
 
 SceneGraph::SceneGraph(bool empty)
-    : SceneGraph(empty ? LayerKeys{} : LayerKeys{2, 3, 4, 5},
+    : SceneGraph(empty ? LayerKeys{} : LayerKeys{2, 3, 4, 5, 6},
                  empty ? LayerNames{}
                        : LayerNames{{DsgLayers::OBJECTS, 2},
                                     {DsgLayers::AGENTS, 2},
                                     {DsgLayers::PLACES, 3},
                                     {DsgLayers::ROOMS, 4},
-                                    {DsgLayers::BUILDINGS, 5}}) {}
+                                    {DsgLayers::FLOORS, 5},
+                                    {DsgLayers::BUILDINGS, 6}}) {}
 
 SceneGraph::SceneGraph(const LayerKeys& layer_keys, const LayerNames& layer_names)
     : layer_keys_(layersFromNames(layer_names, layer_keys)), layer_names_(layer_names) {

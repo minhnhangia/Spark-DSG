@@ -36,6 +36,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include "spark_dsg/node_attributes.h"
 #include "spark_dsg/printing.h"
 #include "spark_dsg/scene_graph.h"
 
@@ -75,7 +76,7 @@ TEST(SceneGraph, defaultConstructorInvariants) {
   SceneGraph graph;
   EXPECT_EQ(0u, graph.numNodes());
   EXPECT_EQ(0u, graph.numEdges());
-  EXPECT_EQ(4u, graph.numLayers());
+  EXPECT_EQ(5u, graph.numLayers());
 }
 
 TEST(SceneGraph, customLayerInvariants) {
@@ -490,28 +491,28 @@ TEST(SceneGraph, removeEdgeCorrect) {
 
 TEST(SceneGraph, insertDynamicLayerCorrect) {
   SceneGraph graph;
-  EXPECT_EQ(4u, graph.numLayers());
+  EXPECT_EQ(5u, graph.numLayers());
 
   graph.addLayer(1, 'a');
-  EXPECT_EQ(5u, graph.numLayers());
+  EXPECT_EQ(6u, graph.numLayers());
   EXPECT_TRUE(graph.hasLayer(1, 'a'));
   EXPECT_FALSE(graph.hasLayer(2, 'a'));
   EXPECT_FALSE(graph.hasLayer(1, 'b'));
 
   graph.addLayer(1, 'b');
-  EXPECT_EQ(5u, graph.numLayers());
+  EXPECT_EQ(6u, graph.numLayers());
   EXPECT_TRUE(graph.hasLayer(1, 'a'));
   EXPECT_FALSE(graph.hasLayer(2, 'a'));
   EXPECT_TRUE(graph.hasLayer(1, 'b'));
 
   graph.addLayer(2, 'a');
-  EXPECT_EQ(5u, graph.numLayers());
+  EXPECT_EQ(6u, graph.numLayers());
   EXPECT_TRUE(graph.hasLayer(1, 'a'));
   EXPECT_TRUE(graph.hasLayer(2, 'a'));
   EXPECT_TRUE(graph.hasLayer(1, 'b'));
 
   graph.addLayer(7, 'a');
-  EXPECT_EQ(6u, graph.numLayers());
+  EXPECT_EQ(7u, graph.numLayers());
   EXPECT_TRUE(graph.hasLayer(1, 'a'));
   EXPECT_TRUE(graph.hasLayer(2, 'a'));
   EXPECT_TRUE(graph.hasLayer(1, 'b'));
@@ -520,7 +521,7 @@ TEST(SceneGraph, insertDynamicLayerCorrect) {
 
 TEST(SceneGraph, emplacePartitionNodeCorrect) {
   SceneGraph G;
-  EXPECT_EQ(4u, G.numLayers());
+  EXPECT_EQ(5u, G.numLayers());
 
   EXPECT_TRUE(G.emplaceNode(2, "a0"_id, std::make_unique<NodeAttributes>(), 'a'));
   EXPECT_TRUE(G.hasNode("a0"_id));
@@ -708,7 +709,7 @@ TEST(SceneGraph, mergeGraphWithPartitionsCorrect) {
 
 TEST(SceneGraph, clearWithPartitionsCorrect) {
   SceneGraph graph;
-  EXPECT_EQ(4u, graph.numLayers());
+  EXPECT_EQ(5u, graph.numLayers());
 
   EXPECT_TRUE(graph.emplaceNode(2, "a0"_id, std::make_unique<NodeAttributes>(), 'a'));
   EXPECT_EQ(1u, graph.numNodes());
@@ -971,6 +972,53 @@ TEST(SceneGraph, subgraphCorrect) {
   EXPECT_TRUE(subgraph->hasEdge("x0"_id, "y1"_id));
   EXPECT_TRUE(subgraph->hasEdge("a1"_id, "x0"_id));
   EXPECT_TRUE(subgraph->hasEdge("a0"_id, "a1"_id));
+}
+
+TEST(SceneGraph, floorHierarchyCorrect) {
+  // building -> floor -> room -> place, with a connector between two floors
+  SceneGraph graph;
+  ASSERT_EQ(DsgLayers::nameToLayerId(DsgLayers::FLOORS), LayerKey(5));
+  ASSERT_EQ(DsgLayers::nameToLayerId(DsgLayers::BUILDINGS), LayerKey(6));
+  ASSERT_EQ(DsgLayers::nameToLayerId(DsgLayers::CONNECTORS), LayerKey(4, 1));
+  graph.addLayer(4, 1, DsgLayers::CONNECTORS);
+
+  EXPECT_TRUE(graph.emplaceNode(DsgLayers::BUILDINGS, "B0"_id, std::make_unique<NodeAttributes>()));
+  EXPECT_TRUE(graph.emplaceNode(DsgLayers::FLOORS, "F0"_id, std::make_unique<FloorNodeAttributes>()));
+  EXPECT_TRUE(graph.emplaceNode(DsgLayers::FLOORS, "F1"_id, std::make_unique<FloorNodeAttributes>()));
+  EXPECT_TRUE(graph.emplaceNode(DsgLayers::ROOMS, "R0"_id, std::make_unique<RoomNodeAttributes>()));
+  EXPECT_TRUE(graph.emplaceNode(DsgLayers::CONNECTORS, "X0"_id, std::make_unique<ConnectorNodeAttributes>()));
+  EXPECT_TRUE(graph.emplaceNode(DsgLayers::PLACES, "p0"_id, std::make_unique<PlaceNodeAttributes>()));
+  EXPECT_TRUE(graph.emplaceNode(DsgLayers::PLACES, "p1"_id, std::make_unique<PlaceNodeAttributes>()));
+
+  EXPECT_TRUE(graph.insertEdge("B0"_id, "F0"_id));
+  EXPECT_TRUE(graph.insertEdge("B0"_id, "F1"_id));
+  EXPECT_TRUE(graph.insertEdge("F0"_id, "R0"_id, nullptr, true));
+  EXPECT_TRUE(graph.insertEdge("R0"_id, "p0"_id, nullptr, true));
+  EXPECT_TRUE(graph.insertEdge("X0"_id, "p1"_id, nullptr, true));
+  // a connector belongs to both of its floors
+  EXPECT_TRUE(graph.insertEdge("F0"_id, "X0"_id));
+  EXPECT_TRUE(graph.insertEdge("F1"_id, "X0"_id));
+  // rooms and connectors share a level, so they are siblings
+  EXPECT_TRUE(graph.insertEdge("R0"_id, "X0"_id));
+
+  testParentRelationship(graph, "B0"_id, "F0"_id);
+  testParentRelationship(graph, "F0"_id, "R0"_id);
+  testParentRelationship(graph, "R0"_id, "p0"_id);
+  testParentRelationship(graph, "X0"_id, "p1"_id);
+  testSiblingRelationship(graph, "R0"_id, "X0"_id);
+
+  const auto& connector = graph.getNode("X0"_id);
+  EXPECT_EQ(connector.parents(), (std::set<NodeId>{"F0"_id, "F1"_id}));
+  EXPECT_FALSE(connector.getParent().has_value());
+}
+
+TEST(SceneGraph, oldBuildingLayerIdPreserved) {
+  // graphs written before FLOORS existed keep BUILDINGS at layer 5
+  const auto graph = SceneGraph::fromNames({{DsgLayers::ROOMS, 4}, {DsgLayers::BUILDINGS, 5}});
+  EXPECT_EQ(graph->getLayerKey(DsgLayers::BUILDINGS), LayerKey(5));
+  EXPECT_TRUE(graph->emplaceNode(DsgLayers::BUILDINGS, "B0"_id, std::make_unique<NodeAttributes>()));
+  EXPECT_TRUE(graph->hasNode("B0"_id));
+  EXPECT_FALSE(graph->getLayerKey(DsgLayers::FLOORS).has_value());
 }
 
 }  // namespace spark_dsg
